@@ -36,6 +36,7 @@ func run() error {
 		propFrom     = prop.String("from", ts(now), "Propagation start time")
 		propTo       = prop.String("to", ts(now.Add(time.Hour)), "Propagation end time")
 		propInterval = prop.Duration("interval", 10*time.Minute, "Propagation end time")
+		propHigher   = prop.Bool("higher-precision", true, "Higher-precision (as able)")
 
 		orbit         = flag.NewFlagSet("on-orbit", flag.ExitOnError)
 		orbitFrom     = orbit.String("from", ts(now), "Propagation start time")
@@ -226,6 +227,7 @@ Subcommands:
 		if err != nil {
 			return err
 		}
+		gpelements.HigherPrecisionSGP4 = *propHigher
 		for i, e := range es {
 			err := Prop(&e, t0, t1, *propInterval, true)
 			if err != nil {

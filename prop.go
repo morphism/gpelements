@@ -1,14 +1,13 @@
 package gpelements
 
 import (
-	"log"
 	"time"
 
 	sat "github.com/jsmorph/go-satellite"
 	sgp4 "github.com/morphism/sgp4go"
 )
 
-var HigherPrecisionSGP4 = false
+var HigherPrecisionSGP4 = true
 
 func (e *Elements) SGP4() (*sgp4.TLE, error) {
 	_, line1, line2, err := e.MarshalTLE()
@@ -21,7 +20,6 @@ func (e *Elements) SGP4() (*sgp4.TLE, error) {
 	}
 
 	if HigherPrecisionSGP4 {
-		log.Printf("DEBUG HigherPrecisionSGP4")
 		tle.Set(time.Time(*e.Epoch),
 			e.MeanMotionDot,
 			e.MeanMotionDDot,
