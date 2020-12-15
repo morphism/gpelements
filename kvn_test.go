@@ -7,7 +7,7 @@ import (
 )
 
 func TestKVNs(t *testing.T) {
-	filename := "kvn.txt"
+	filename := "data/test.kvn"
 
 	in, err := os.Open(filename)
 	if err != nil {

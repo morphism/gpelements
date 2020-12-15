@@ -23,7 +23,7 @@ func TestDo(t *testing.T) {
 		})
 	}
 
-	for _, filename := range []string{"pretty.json", "ugly.json"} {
+	for _, filename := range []string{"data/test.jsonarray"} {
 		if err := f(filename); err != nil {
 			t.Fatal(err)
 		}

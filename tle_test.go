@@ -9,7 +9,7 @@ import (
 )
 
 func TestTLEMany(t *testing.T) {
-	in, err := os.Open("test.tle")
+	in, err := os.Open("data/test.tle")
 	if err != nil {
 		t.Fatal(err)
 	}

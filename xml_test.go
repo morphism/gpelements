@@ -7,9 +7,9 @@ import (
 )
 
 func TestXML(t *testing.T) {
-	filename := "omm.xml"
+	filename := "data/test.xml"
 
-	bs, err := ioutil.ReadFile("omm.xml")
+	bs, err := ioutil.ReadFile(filename)
 	if err != nil {
 		t.Skipf("Couldn't read %s: %s", filename, err)
 	}
