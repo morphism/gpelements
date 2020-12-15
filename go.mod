@@ -8,7 +8,7 @@ require (
 	github.com/golang/protobuf v1.3.4 // indirect
 	github.com/jsmorph/go-satellite v0.0.0-20200209185444-f2e743f52cab
 	github.com/kr/pretty v0.2.0 // indirect
-	github.com/morphism/sgp4go v0.0.0-20201214160231-f8c0a8f572f0
+	github.com/morphism/sgp4go v0.0.2
 	github.com/onsi/ginkgo v1.12.0 // indirect
 	github.com/onsi/gomega v1.9.0 // indirect
 	golang.org/x/net v0.0.0-20200324143707-d3edc9973b7e // indirect
