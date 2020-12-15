@@ -19,7 +19,9 @@ func NewNoradCatId(s string) NoradCatId {
 }
 
 func (s *NoradCatId) UnmarshalJSON(bs []byte) error {
-	*s = NoradCatId(string(bs))
+	maybeQuoted := string(bs)
+	maybeQuoted = strings.Trim(maybeQuoted, `"`)
+	*s = NoradCatId(maybeQuoted)
 	return nil
 }
 

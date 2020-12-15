@@ -144,7 +144,7 @@ The example above uses [jq](https://stedolan.github.io/jq/).
 
 1. [Consultative Committee for Space Data Systems (CCSDS)](https://public.ccsds.org/default.aspx)
 
-1. [Recommended Standard CCSDS 502.0-B-2](https://public.ccsds.org/Pubs/502x0b2c1e2_tc1214.pdf)
+1. [Recommended Standard CCSDS 502.0-B-2](https://public.ccsds.org/Pubs/502x0b2c1e2.pdf)
 
 1. [Celestrak's discussion of element set formats](https://celestrak.com/NORAD/documentation/gp-data-formats.php)
 

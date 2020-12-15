@@ -75,6 +75,7 @@ func Do(in io.Reader, f func(Elements) error) error {
 	switch bs[0] {
 	case '[': // JSON representing and array of Elements.
 		log.Printf("Detected JSON array input")
+		bs = []byte(DestringNumbers(string(bs)))
 		err = json.Unmarshal(bs, &es)
 
 	case '{': // One elements in JSON per line.
