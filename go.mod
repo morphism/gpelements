@@ -2,8 +2,6 @@ module github.com/morphism/gpelements
 
 go 1.14
 
-replace github.com/morphism/sgp4go => /home/somebody/src/sgp4go
-
 require (
 	github.com/golang/protobuf v1.3.4 // indirect
 	github.com/jsmorph/go-satellite v0.0.0-20200209185444-f2e743f52cab
