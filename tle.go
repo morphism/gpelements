@@ -21,7 +21,7 @@ func ParseTLE(line0, line1, line2 string) (*Elements, error) {
 	if s, err = tleExtract(line1, 3, 7); err != nil {
 		return nil, wrapErrf(err, "NoradCatId")
 	}
-	e.NoradCatId = NewNoradCatId(s)
+	e.NoradCatId = NewNoradCatId(s).Decode()
 
 	if s, err = tleExtract(line1, 8, 8); err != nil {
 		return nil, wrapErrf(err, "ClassificationType")
@@ -143,7 +143,7 @@ func ParseTLE(line0, line1, line2 string) (*Elements, error) {
 	if s, err = tleExtract(line2, 3, 7); err != nil {
 		return nil, wrapErrf(err, "NoradCatId")
 	}
-	if id := NewNoradCatId(s); id != e.NoradCatId {
+	if id := NewNoradCatId(s).Decode(); id != e.NoradCatId {
 		return nil, fmt.Errorf("NoradCatId disagreement: '%s' != '%s'", string(id), string(e.NoradCatId))
 	}
 
@@ -254,7 +254,7 @@ func (e *Elements) MarshalTLE() (line0, line1, line2 string, err error) {
 	// Slowly (very) and clearly (hopefully).
 	s := "1 "
 
-	s += fmt.Sprintf("% -5s%s ", e.NoradCatId, e.ClassificationType)
+	s += fmt.Sprintf("% -5s%s ", e.NoradCatId.Encode(), e.ClassificationType)
 
 	if err := e.UseInternationalDesignator(); err != nil {
 		return "", "", "", err
@@ -309,7 +309,7 @@ func (e *Elements) MarshalTLE() (line0, line1, line2 string, err error) {
 	line1 = s
 
 	s = "2 " +
-		fmt.Sprintf("% -5s ", e.NoradCatId) +
+		fmt.Sprintf("% -5s ", e.NoradCatId.Encode()) +
 		fmt.Sprintf("%8.4f ", e.Inclination) +
 		fmt.Sprintf("%8.4f ", e.RightAscention)
 

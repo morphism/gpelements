@@ -2,35 +2,7 @@ package gpelements
 
 import (
 	"encoding/xml"
-	"fmt"
-	"strconv"
-	"strings"
 )
-
-// NoradCatId exists in an attempt to handle numbers or the new,
-// temporary "Alpha-5 scheme" for NORAD catalog identifiers.
-//
-// Note that JSON serializations have explicit syntax for strings vs
-// numbers, so a NoradCatId will try to (de)serialize as a number
-type NoradCatId string
-
-func NewNoradCatId(s string) NoradCatId {
-	return NoradCatId(strings.TrimSpace(s))
-}
-
-func (s *NoradCatId) UnmarshalJSON(bs []byte) error {
-	maybeQuoted := string(bs)
-	maybeQuoted = strings.Trim(maybeQuoted, `"`)
-	*s = NoradCatId(maybeQuoted)
-	return nil
-}
-
-func (s NoradCatId) MarshalJSON() ([]byte, error) {
-	if _, err := strconv.Atoi(string(s)); err == nil {
-		return []byte(s), nil
-	}
-	return []byte(fmt.Sprintf(`"%s"`, string(s))), nil
-}
 
 type Elements struct {
 	XMLName xml.Name `json:"-" xml:"omm"`

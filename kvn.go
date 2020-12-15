@@ -92,6 +92,9 @@ func ParseInternationalDesignator(s string) (y int, n int, p string, err error) 
 	y = 0
 	n = 0
 	p = ""
+	if s == "null" {
+		return
+	}
 	if len(s) < 4 {
 		return
 	}

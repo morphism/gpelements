@@ -83,12 +83,45 @@ Subcommands:
 
 (The default timestamps are acutally the current time.)
 
-For example,
+## Examples
+
+With [this
+data](https://www.space-track.org/basicspacedata/query/class/gp/EPOCH/%3Enow-30/NORAD_CAT_ID/270000--339999/orderby/NORAD_CAT_ID/format/json)
+from [`space-track.org`](https://www.space-track.org/):
+
+```Shell
+# We'll needlessly exercise our transformations.
+cat tmp/now.json |
+    tletool transform -emit xml |
+    tletool transform -emit kvn |
+    tletool transform -emit csv |
+    tletool transform -emit json |
+    tletool prop |
+    tail -4 |
+    jq -r -c '{"NORAD":.Norad,"LLA":.LLA}'
+
+```
+
+gives
+
+```
+{"NORAD":270288,"LLA":{"Lat":65.84531,"Lon":-14.565547,"Alt":1292.6202}}
+{"NORAD":270288,"LLA":{"Lat":33.46682,"Lon":-17.518644,"Alt":1285.534}}
+{"NORAD":270288,"LLA":{"Lat":0.9417589,"Lon":-20.208746,"Alt":1283.9185}}
+{"NORAD":270288,"LLA":{"Lat":-31.554588,"Lon":-22.894846,"Alt":1292.9807}}
+```
+
+With
+[data](https://celestrak.com/NORAD/elements/gp.php?GROUP=STATIONS&FORMAT=KVN)
+from [Celestrak](https://celestrak.com):
 
 ```Shell
 if [ ! -f data/test.kvn ]; then
 	curl 'https://celestrak.com/NORAD/elements/gp.php?GROUP=STATIONS&FORMAT=KVN' > data/test.kvn
 fi
+
+# We'll needlessly exercise our transformations, and we'll keep 
+# the intermediate output.
 
 cat data/test.kvn |
   tletool transform -emit json | 

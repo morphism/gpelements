@@ -1,6 +1,10 @@
 package gpelements
 
-import "testing"
+import (
+	"log"
+	"strconv"
+	"testing"
+)
 
 func TestCopy(t *testing.T) {
 	e0 := NewElements()
@@ -11,4 +15,16 @@ func TestCopy(t *testing.T) {
 	if e0.Name == e1.Name {
 		t.Fatal(e0.Name)
 	}
+}
+
+func TestEncode(t *testing.T) {
+	var (
+		n  = int64(1234567)
+		s  = strconv.FormatInt(n, 10)
+		id = NoradCatId(s)
+		e  = id.Encode()
+		d  = e.Decode()
+	)
+
+	log.Printf("DEBUG %s %s %s %s", s, id, e, d)
 }
