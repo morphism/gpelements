@@ -1,18 +1,41 @@
 package gpelements
 
 import (
+	"log"
 	"time"
 
 	sat "github.com/jsmorph/go-satellite"
 	sgp4 "github.com/morphism/sgp4go"
 )
 
+var HigherPrecisionSGP4 = false
+
 func (e *Elements) SGP4() (*sgp4.TLE, error) {
 	_, line1, line2, err := e.MarshalTLE()
 	if err != nil {
 		return nil, err
 	}
-	return sgp4.NewTLE(line1, line2)
+	tle, err := sgp4.NewTLE(line1, line2)
+	if err != nil {
+		return nil, err
+	}
+
+	if HigherPrecisionSGP4 {
+		log.Printf("DEBUG HigherPrecisionSGP4")
+		tle.Set(time.Time(*e.Epoch),
+			e.MeanMotionDot,
+			e.MeanMotionDDot,
+			e.BStar,
+			e.Inclination,
+			e.RightAscension,
+			e.Eccentricity,
+			e.ArgOfPericenter,
+			e.MeanAnomaly,
+			e.MeanMotion,
+			e.RevAtEpoch)
+	}
+
+	return tle, nil
 }
 
 // Vect is a 3-vector.

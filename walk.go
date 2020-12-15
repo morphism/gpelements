@@ -74,7 +74,7 @@ func (e *Elements) Walk(minSteps, maxSteps int) error {
 		case 0:
 			e.Inclination = stepDegrees(e.Inclination)
 		case 1:
-			e.RightAscention = stepDegrees(e.RightAscention)
+			e.RightAscension = stepDegrees(e.RightAscension)
 		case 2:
 			e.Eccentricity = stepEcc(e.Eccentricity)
 		case 3:

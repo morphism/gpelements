@@ -35,6 +35,10 @@ func (s NoradCatId) MarshalJSON() ([]byte, error) {
 }
 
 func Base(n int64, alphabet string) string {
+	if n < 100000 {
+		return strconv.FormatInt(n, 10)
+	}
+
 	var (
 		b   = int64(len(alphabet))
 		acc = ""

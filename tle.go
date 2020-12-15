@@ -159,7 +159,7 @@ func ParseTLE(line0, line1, line2 string) (*Elements, error) {
 		return nil, wrapErrf(err, "RightAscention")
 	}
 	s = strings.TrimLeft(s, " ")
-	if e.RightAscention, err = tleParseFloat(s); err != nil {
+	if e.RightAscension, err = tleParseFloat(s); err != nil {
 		return nil, wrapErrf(err, "RightAscention '%s'", s)
 	}
 
@@ -311,7 +311,7 @@ func (e *Elements) MarshalTLE() (line0, line1, line2 string, err error) {
 	s = "2 " +
 		fmt.Sprintf("% -5s ", e.NoradCatId.Encode()) +
 		fmt.Sprintf("%8.4f ", e.Inclination) +
-		fmt.Sprintf("%8.4f ", e.RightAscention)
+		fmt.Sprintf("%8.4f ", e.RightAscension)
 
 	{
 		s0 := strconv.FormatFloat(e.Eccentricity, 'f', 8, 64)

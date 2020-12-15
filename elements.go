@@ -37,7 +37,7 @@ type Elements struct {
 	Inclination float64 `json:"INCLINATION" xml:"body>segment>data>meanElements>INCLINATION"`
 
 	// RightAscension: "RA_OF_ASC_NODE": 52.3173,
-	RightAscention float64 `json:"RA_OF_ASC_NODE" xml:"body>segment>data>meanElements>RA_OF_ASC_NODE"`
+	RightAscension float64 `json:"RA_OF_ASC_NODE" xml:"body>segment>data>meanElements>RA_OF_ASC_NODE"`
 
 	// ArgOfPericenter: "ARG_OF_PERICENTER": 82.0365,
 	ArgOfPericenter float64 `json:"ARG_OF_PERICENTER" xml:"body>segment>data>meanElements>ARG_OF_PERICENTER"`
