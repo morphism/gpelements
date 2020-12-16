@@ -6,6 +6,7 @@ import (
 	"encoding/xml"
 	"flag"
 	"fmt"
+	"hash/fnv"
 	"log"
 	"os"
 	"time"
@@ -52,10 +53,14 @@ func run() error {
 		rename      = flag.NewFlagSet("rename", flag.ExitOnError)
 		renameState = rename.Int64("state", 0, "Next catalog number in Alpha-5 A range")
 		renameClear = rename.Bool("clear", false, "Remove original name (suffix)")
+
+		sample    = flag.NewFlagSet("sample", flag.PanicOnError)
+		sampleMod = sample.Int("mod", 10, "Sampling hash modulus")
+		sampleRem = sample.Int("rem", 0, "Sampling hash remainder")
 	)
 
 	usage := func() {
-		fmt.Fprintf(os.Stderr, `Usage: %s transform|prop|on-orbit|walk|rename ...
+		fmt.Fprintf(os.Stderr, `Usage: %s transform|prop|on-orbit|walk|rename|sample ...
 
 Subcommands:
 
@@ -86,6 +91,10 @@ Subcommands:
 		fmt.Fprintf(os.Stderr, "\n  rename: Update name, catalog number\n\n")
 		rename.PrintDefaults()
 		fmt.Fprintf(os.Stderr, "\n")
+
+		fmt.Fprintf(os.Stderr, "\n  Sample: Sampled based on hash of name+id+num\n\n")
+		rename.PrintDefaults()
+		fmt.Fprintf(os.Stderr, "\n")
 	}
 
 	if len(os.Args) < 2 {
@@ -109,6 +118,8 @@ Subcommands:
 		walk.Parse(args)
 	case "rename":
 		rename.Parse(args)
+	case "sample":
+		sample.Parse(args)
 	default:
 		usage()
 		os.Exit(1)
@@ -238,6 +249,24 @@ Subcommands:
 			}
 		}
 
+	case "sample":
+		for _, e := range es {
+			var (
+				k = e.Name + "/" + e.Id + "/" + string(e.NoradCatId)
+				h = Hash(k)
+				r = h % uint64(*sampleMod)
+			)
+			if r != uint64(*sampleRem) {
+				continue
+			}
+
+			bs, err := json.Marshal(e)
+			if err != nil {
+				return err
+			}
+			fmt.Printf("%s\n", bs)
+		}
+
 	case "orbit", "on-orbit":
 		t0, err := time.Parse(time.RFC3339Nano, *orbitFrom)
 		if err != nil {
@@ -359,4 +388,10 @@ func Prop(e *gpelements.Elements, from, to time.Time, interval time.Duration, pr
 	}
 
 	return nil
+}
+
+func Hash(s string) uint64 {
+	h := fnv.New64a()
+	h.Write([]byte(s))
+	return h.Sum64()
 }

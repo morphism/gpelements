@@ -24,7 +24,7 @@ and random walks.
 ## Usage
 
 ```
-Usage: tletool transform|prop|on-orbit|walk|rename ...
+Usage: tletool transform|prop|on-orbit|walk|rename|sample ...
 
 Subcommands:
 
@@ -46,20 +46,22 @@ Subcommands:
   prop: Propagate
 
   -from string
-    	Propagation start time (default "2020-12-15T14:49:29.25710621Z")
+    	Propagation start time (default "2020-12-16T18:08:01.102639863Z")
+  -higher-precision
+    	Higher-precision (as able) (default true)
   -interval duration
     	Propagation end time (default 10m0s)
   -to string
-    	Propagation end time (default "2020-12-15T15:49:29.25710621Z")
+    	Propagation end time (default "2020-12-16T19:08:01.102639863Z")
 
   on-orbit: Filter for on-orbit
 
   -from string
-    	Propagation start time (default "2020-12-15T14:49:29.25710621Z")
+    	Propagation start time (default "2020-12-16T18:08:01.102639863Z")
   -interval duration
     	Propagation end time (default 10m0s)
   -to string
-    	Propagation end time (default "2020-12-15T15:49:29.25710621Z")
+    	Propagation end time (default "2020-12-16T19:08:01.102639863Z")
 
   walk: Random walk
 
@@ -79,6 +81,13 @@ Subcommands:
   -state int
     	Next catalog number in Alpha-5 A range
 
+
+  Sample: Sampled based on hash of name+id+num
+
+  -clear
+    	Remove original name (suffix)
+  -state int
+    	Next catalog number in Alpha-5 A range
 ```
 
 (The default timestamps are acutally the current time.)
