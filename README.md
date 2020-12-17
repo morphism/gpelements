@@ -24,7 +24,7 @@ and random walks.
 ## Usage
 
 ```
-Usage: tletool transform|prop|on-orbit|walk|rename|sample ...
+Usage: tletool transform|prop|on-orbit|walk|rename|sample|random ...
 
 Subcommands:
 
@@ -46,22 +46,22 @@ Subcommands:
   prop: Propagate
 
   -from string
-    	Propagation start time (default "2020-12-16T18:08:01.102639863Z")
+    	Propagation start time (default "2020-12-17T03:25:26.958925604Z")
   -higher-precision
     	Higher-precision (as able) (default true)
   -interval duration
     	Propagation end time (default 10m0s)
   -to string
-    	Propagation end time (default "2020-12-16T19:08:01.102639863Z")
+    	Propagation end time (default "2020-12-17T04:25:26.958925604Z")
 
   on-orbit: Filter for on-orbit
 
   -from string
-    	Propagation start time (default "2020-12-16T18:08:01.102639863Z")
+    	Propagation start time (default "2020-12-17T03:25:26.958925604Z")
   -interval duration
     	Propagation end time (default 10m0s)
   -to string
-    	Propagation end time (default "2020-12-16T19:08:01.102639863Z")
+    	Propagation end time (default "2020-12-17T04:25:26.958925604Z")
 
   walk: Random walk
 
@@ -74,7 +74,7 @@ Subcommands:
   -reset-epoch
     	Set Epoch to now (default true)
   -seed int
-    	RNG seed (defaults to current time in ns) (default 1608168447797276382)
+    	RNG seed (defaults to current time in ns) (default 1608175526958942431)
 
   rename: Update name, catalog number
 
@@ -86,10 +86,17 @@ Subcommands:
 
   Sample: Sampled based on hash of name+id+num
 
-  -clear
-    	Remove original name (suffix)
-  -state int
-    	Next catalog number in Alpha-5 A range
+  -mod int
+    	Sampling hash modulus (default 10)
+  -rem int
+    	Sampling hash remainder
+
+
+  Random: Emit a percentage of the input
+
+  -percent float
+    	Approximate percent of lines to emit
+
 ```
 
 (The default timestamps are acutally the current time.)

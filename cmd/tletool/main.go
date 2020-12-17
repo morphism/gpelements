@@ -59,10 +59,13 @@ func run() error {
 		sample    = flag.NewFlagSet("sample", flag.PanicOnError)
 		sampleMod = sample.Int("mod", 10, "Sampling hash modulus")
 		sampleRem = sample.Int("rem", 0, "Sampling hash remainder")
+
+		random           = flag.NewFlagSet("random", flag.PanicOnError)
+		randomPercentage = random.Float64("percent", 0, "Approximate percent of lines to emit")
 	)
 
 	usage := func() {
-		fmt.Fprintf(os.Stderr, `Usage: %s transform|prop|on-orbit|walk|rename|sample ...
+		fmt.Fprintf(os.Stderr, `Usage: %s transform|prop|on-orbit|walk|rename|sample|random ...
 
 Subcommands:
 
@@ -95,7 +98,11 @@ Subcommands:
 		fmt.Fprintf(os.Stderr, "\n")
 
 		fmt.Fprintf(os.Stderr, "\n  Sample: Sampled based on hash of name+id+num\n\n")
-		rename.PrintDefaults()
+		sample.PrintDefaults()
+		fmt.Fprintf(os.Stderr, "\n")
+
+		fmt.Fprintf(os.Stderr, "\n  Random: Emit a percentage of the input\n\n")
+		random.PrintDefaults()
 		fmt.Fprintf(os.Stderr, "\n")
 	}
 
@@ -122,6 +129,8 @@ Subcommands:
 		rename.Parse(args)
 	case "sample":
 		sample.Parse(args)
+	case "random":
+		random.Parse(args)
 	default:
 		usage()
 		os.Exit(1)
@@ -264,6 +273,22 @@ Subcommands:
 				continue
 			}
 
+			bs, err := json.Marshal(e)
+			if err != nil {
+				return err
+			}
+			fmt.Printf("%s\n", bs)
+		}
+
+	case "random":
+		percent := *randomPercentage
+		if 1 < percent {
+			percent /= 100
+		}
+		for _, e := range es {
+			if percent < rand.Float64() {
+				continue
+			}
 			bs, err := json.Marshal(e)
 			if err != nil {
 				return err
