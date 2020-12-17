@@ -73,6 +73,8 @@ Subcommands:
     	Minimum number of steps (default 1)
   -reset-epoch
     	Set Epoch to now (default true)
+  -seed int
+    	RNG seed (defaults to current time in ns) (default 1608168447797276382)
 
   rename: Update name, catalog number
 

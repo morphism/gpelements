@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"hash/fnv"
 	"log"
+	"math/rand"
 	"os"
 	"time"
 
@@ -49,6 +50,7 @@ func run() error {
 		maxSteps   = walk.Int("max-steps", 3, "Maximum number of steps")
 		incSet     = walk.Bool("inc-set", true, "Increment element set number")
 		resetEpoch = walk.Bool("reset-epoch", true, "Set Epoch to now")
+		seed       = walk.Int64("seed", time.Now().UTC().UnixNano(), "RNG seed (defaults to current time in ns)")
 
 		rename      = flag.NewFlagSet("rename", flag.ExitOnError)
 		renameState = rename.Int64("state", 0, "Next catalog number in Alpha-5 A range")
@@ -124,6 +126,8 @@ Subcommands:
 		usage()
 		os.Exit(1)
 	}
+
+	rand.Seed(*seed)
 
 	in := os.Stdin
 
