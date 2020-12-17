@@ -50,7 +50,7 @@ func ParseTLE(line0, line1, line2 string) (*Elements, error) {
 	s = strings.TrimLeft(s, "0")
 	if 0 < len(s) {
 		if e.LaunchNum, err = strconv.Atoi(s); err != nil {
-			return nil, wrapErrf(err, "LaunchNum")
+			return nil, wrapErrf(err, "LaunchNum: %s", line1)
 		}
 	}
 

@@ -17,7 +17,7 @@ var (
 )
 
 func (e *Elements) MarshalCSV() (string, error) {
-	f := "%q,%q,%q,%g,%g,%g,%g,%g,%g,%d,%q,%q,%d,%g,%g,%g,%g\n"
+	f := "%q,%q,%q,%g,%g,%g,%g,%g,%g,%d,%q,%q,%d,%g,%g,%g,%g"
 
 	return fmt.Sprintf(f,
 		e.Name,

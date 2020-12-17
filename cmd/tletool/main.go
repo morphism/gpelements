@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"encoding/json"
 	"encoding/xml"
 	"flag"
@@ -30,9 +29,12 @@ func run() error {
 
 		now = time.Now().UTC()
 
+		generic  = flag.NewFlagSet("generic", flag.ContinueOnError)
+		bufSize  = generic.Int("buf-size", 4096, "Buffer size")
+		tolerate = generic.Bool("tolerate", false, "Log errors instead of stopping")
+
 		transform = flag.NewFlagSet("transform", flag.ExitOnError)
 		emit      = transform.String("emit", "csv", "Output represention: csv|csvh|json|jsonarray|tle|kvn|xml")
-		tolerate  = transform.Bool("tolerate", false, "Log errors instead of stopping")
 
 		prop         = flag.NewFlagSet("prop", flag.ExitOnError)
 		propFrom     = prop.String("from", ts(now), "Propagation start time")
@@ -56,11 +58,11 @@ func run() error {
 		renameState = rename.Int64("state", 0, "Next catalog number in Alpha-5 A range")
 		renameClear = rename.Bool("clear", false, "Remove original name (suffix)")
 
-		sample    = flag.NewFlagSet("sample", flag.PanicOnError)
+		sample    = flag.NewFlagSet("sample", flag.ExitOnError)
 		sampleMod = sample.Int("mod", 10, "Sampling hash modulus")
 		sampleRem = sample.Int("rem", 0, "Sampling hash remainder")
 
-		random           = flag.NewFlagSet("random", flag.PanicOnError)
+		random           = flag.NewFlagSet("random", flag.ExitOnError)
 		randomPercentage = random.Float64("percent", 0, "Approximate percent of lines to emit")
 	)
 
@@ -72,6 +74,8 @@ Subcommands:
   transform:
 
 `, os.Args[0])
+		generic.PrintDefaults()
+
 		transform.PrintDefaults()
 
 		fmt.Fprintf(os.Stderr, `
@@ -111,9 +115,13 @@ Subcommands:
 		os.Exit(1)
 	}
 
+	generic.Parse(os.Args[1:])
+
 	var (
-		subcommand = os.Args[1]
-		args       = os.Args[2:]
+		remaining  = generic.NArg()
+		next       = len(os.Args) - remaining
+		subcommand = os.Args[next]
+		args       = os.Args[next+1:]
 	)
 
 	switch subcommand {
@@ -138,193 +146,113 @@ Subcommands:
 
 	rand.Seed(*seed)
 
-	in := os.Stdin
+	if *bufSize < gpelements.MinBufferSize {
+		*bufSize = gpelements.MinBufferSize
+	}
 
-	defer in.Close()
-	r := bufio.NewReader(in)
-
-	es := make([]gpelements.Elements, 0, 1024)
-	err := gpelements.Do(r, func(e gpelements.Elements) error {
-		es = append(es, e)
-		return nil
-	})
-
+	t0, err := time.Parse(time.RFC3339Nano, *propFrom)
 	if err != nil {
 		return err
 	}
+	t1, err := time.Parse(time.RFC3339Nano, *propTo)
+	if err != nil {
+		return err
+	}
+	gpelements.HigherPrecisionSGP4 = *propHigher
 
-	switch subcommand {
-	case "transform":
-		csv := func() error {
-			for i, e := range es {
-				s, err := e.MarshalCSV()
-				if err != nil {
-					if !*tolerate {
-						return err
+	var (
+		i  = 0
+		es = make([]gpelements.Elements, 0, 1024)
+	)
+
+	in := os.Stdin
+	defer in.Close()
+
+	err = gpelements.Do(in, *bufSize, func(e gpelements.Elements) error {
+		var (
+			s   string
+			err error
+			bs  []byte
+		)
+
+		switch subcommand {
+		case "transform":
+			switch *emit {
+			case "csv":
+				s, err = e.MarshalCSV()
+			case "csvh":
+				if s, err = e.MarshalCSV(); err == nil {
+					if i == 0 {
+						s = gpelements.CSVHeader + "\n" + s
 					}
-					log.Printf("set %d error: %s", i, err)
-				} else {
-					fmt.Printf("%s", s)
 				}
-			}
-			return nil
-		}
-
-		switch *emit {
-		case "csvh":
-			fmt.Printf("%s\n", gpelements.CSVHeader)
-			if err := csv(); err != nil {
-				return err
-			}
-
-		case "csv":
-			if err := csv(); err != nil {
-				return err
-			}
-
-		case "xml":
-			list := gpelements.ElementsList{
-				Es: es,
-			}
-			bs, err := xml.Marshal(list)
-			if err != nil {
-				return err
-			}
-			fmt.Printf("%s\n", bs)
-
-		case "json":
-			for i, e := range es {
-				bs, err := json.Marshal(e)
-				if err != nil {
-					if !*tolerate {
-						return err
-					}
-					log.Printf("set %d error: %s", i, err)
-				} else {
-					fmt.Printf("%s\n", bs)
+			case "json":
+				if bs, err = json.Marshal(e); err == nil {
+					s = string(bs)
 				}
-			}
-		case "jsonarray":
-			bs, err := json.MarshalIndent(es, "", "  ")
-			if err != nil {
-				if !*tolerate {
-					return err
+			case "kvn":
+				s, err = e.MarshalKVN()
+			case "tle":
+				var l0, l1, l2 string
+				if l0, l1, l2, err = e.MarshalTLE(); err == nil {
+					s = fmt.Sprintf("%s\n%s\n%s\n", l0, l1, l2)
 				}
-				log.Printf("error: %s", err)
-			} else {
-				fmt.Printf("%s\n", bs)
+			case "xml":
+				es = append(es, e)
+			case "jsonarray":
+				es = append(es, e)
+			default:
+				return fmt.Errorf("unknown output representation '%s'", *emit)
 			}
-
-		case "kvn":
-			for i, e := range es {
-				s, err := e.MarshalKVN()
-				if err != nil {
-					if !*tolerate {
-						return err
-					}
-					log.Printf("set %d error: %s", i, err)
-				} else {
-					fmt.Printf("%s", s)
-				}
-			}
-		case "tle":
-			for i, e := range es {
-				l0, l1, l2, err := e.MarshalTLE()
-				if err != nil {
-					if !*tolerate {
-						return err
-					}
-					log.Printf("set %d error: %s", i, err)
-				} else {
-					fmt.Printf("%s\n%s\n%s\n", l0, l1, l2)
-				}
-			}
-		default:
-			return fmt.Errorf("unknown output representation '%s'", *emit)
-		}
-	case "prop":
-		t0, err := time.Parse(time.RFC3339Nano, *propFrom)
-		if err != nil {
-			return err
-		}
-		t1, err := time.Parse(time.RFC3339Nano, *propTo)
-		if err != nil {
-			return err
-		}
-		gpelements.HigherPrecisionSGP4 = *propHigher
-		for i, e := range es {
-			err := Prop(&e, t0, t1, *propInterval, true)
-			if err != nil {
-				if !*tolerate {
-					return err
-				}
-				log.Printf("set %d error: %s", i, err)
-			}
-		}
-
-	case "sample":
-		for _, e := range es {
+		case "prop":
+			err = Prop(&e, t0, t1, *propInterval, true)
+		case "sample":
 			var (
 				k = e.Name + "/" + e.Id + "/" + string(e.NoradCatId)
 				h = Hash(k)
 				r = h % uint64(*sampleMod)
 			)
-			if r != uint64(*sampleRem) {
-				continue
+			if r == uint64(*sampleRem) {
+				bs, err := json.Marshal(e)
+				if err == nil {
+					s = string(bs)
+				}
+			}
+		case "random":
+			percent := *randomPercentage
+			if 1 < percent {
+				percent /= 100
+			}
+			if percent > rand.Float64() {
+				bs, err = json.Marshal(e)
+				if bs == nil {
+					s = string(bs)
+				}
 			}
 
-			bs, err := json.Marshal(e)
+		case "orbit", "on-orbit":
+			t0, err := time.Parse(time.RFC3339Nano, *orbitFrom)
 			if err != nil {
 				return err
 			}
-			fmt.Printf("%s\n", bs)
-		}
-
-	case "random":
-		percent := *randomPercentage
-		if 1 < percent {
-			percent /= 100
-		}
-		for _, e := range es {
-			if percent < rand.Float64() {
-				continue
-			}
-			bs, err := json.Marshal(e)
+			t1, err := time.Parse(time.RFC3339Nano, *orbitTo)
 			if err != nil {
 				return err
 			}
-			fmt.Printf("%s\n", bs)
-		}
-
-	case "orbit", "on-orbit":
-		t0, err := time.Parse(time.RFC3339Nano, *orbitFrom)
-		if err != nil {
-			return err
-		}
-		t1, err := time.Parse(time.RFC3339Nano, *orbitTo)
-		if err != nil {
-			return err
-		}
-		for i, e := range es {
-			err := Prop(&e, t0, t1, *orbitInterval, false)
-			if err != nil {
-				log.Printf("set %d propagation error: %s", i, err)
-				continue
+			err = Prop(&e, t0, t1, *orbitInterval, false)
+			if err == nil {
+				bs, err = json.Marshal(e)
+				if bs == nil {
+					s = string(bs)
+				}
 			}
-			bs, err := json.Marshal(e)
-			if err != nil {
-				return err
-			}
-			fmt.Printf("%s\n", bs)
-		}
 
-	case "rename":
-		state := *renameState
-		for i, e := range es {
+		case "rename":
+			state := *renameState
 			var id string
 			id, state, err = gpelements.NextAlpha5Num(state)
 			if err != nil {
-				return err
+				break
 			}
 			if *renameClear {
 				e.Name = "#" + id
@@ -336,48 +264,64 @@ Subcommands:
 			e.Epoch = gpelements.NewTime(time.Now().UTC())
 
 			// Probably should emit in a high-precision format.
-			l0, l1, l2, err := e.MarshalTLE()
-			if err != nil {
-				if !*tolerate {
-					return err
+			var l0, l1, l2 string
+			if l0, l1, l2, err = e.MarshalTLE(); err == nil {
+				s = fmt.Sprintf("%s\n%s\n%s\n", l0, l1, l2)
+			}
+		case "walk":
+			if err = e.Walk(*minSteps, *maxSteps); err == nil {
+				if *incSet {
+					if err = e.IncSetNum(); err == nil {
+						if *resetEpoch {
+							e.Epoch = gpelements.NewTime(time.Now().UTC())
+						}
+
+						// Probably should emit in a high-precision format.
+						var l0, l1, l2 string
+						l0, l1, l2, err = e.MarshalTLE()
+						if err == nil {
+							s = fmt.Sprintf("%s\n%s\n%s\n", l0, l1, l2)
+						}
+					}
 				}
-				log.Printf("set %d error: %s", i, err)
-			} else {
-				fmt.Printf("%s\n%s\n%s\n", l0, l1, l2)
 			}
 		}
 
-	case "walk":
-		for i, e := range es {
-			if err := e.Walk(*minSteps, *maxSteps); err != nil {
-				return err
-			}
-
-			if *incSet {
-				if err := e.IncSetNum(); err != nil {
-					return err
-				}
-			}
-
-			if *resetEpoch {
-				e.Epoch = gpelements.NewTime(time.Now().UTC())
-			}
-
-			// Probably should emit in a high-precision format.
-			l0, l1, l2, err := e.MarshalTLE()
-			if err != nil {
-				if !*tolerate {
-					return err
-				}
-				log.Printf("set %d error: %s", i, err)
-			} else {
-				fmt.Printf("%s\n%s\n%s\n", l0, l1, l2)
+		if err != nil {
+			if *tolerate {
+				log.Printf("at %d %v", i, err)
+				err = nil
 			}
 		}
 
+		i++
+
+		if 0 < len(s) {
+			fmt.Println(s)
+		}
+
+		return err
+	})
+
+	var bs []byte
+	switch subcommand {
+	case "jsonarray":
+		bs, err = json.MarshalIndent(es, "", "  ")
+		if err == nil {
+			fmt.Printf("%s\n", bs)
+		}
+
+	case "xml":
+		list := gpelements.ElementsList{
+			Es: es,
+		}
+		bs, err := xml.Marshal(list)
+		if err == nil {
+			fmt.Printf("%s\n", bs)
+		}
 	}
 
-	return nil
+	return err
 }
 
 func Prop(e *gpelements.Elements, from, to time.Time, interval time.Duration, print bool) error {

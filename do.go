@@ -2,12 +2,12 @@ package gpelements
 
 import (
 	"bufio"
-	"bytes"
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"strings"
 )
 
@@ -58,58 +58,75 @@ func MaybeKVN(bs []byte) bool {
 	return magic == string(bs[0:len(magic)])
 }
 
-func Do(in io.Reader, f func(Elements) error) error {
-	// ToDo: Try harder to avoid reading in the entire input!
-	bs, err := ioutil.ReadAll(in)
+const MinBufferSize = 128
+
+func Do(in io.Reader, bufSize int, f func(Elements) error) error {
+	bin := bufio.NewReaderSize(in, bufSize)
+	peek, err := bin.Peek(MinBufferSize)
 	if err != nil {
 		return err
 	}
 
-	if len(bs) == 0 {
-		return nil
-	}
+	switch peek[0] {
+	case '[', '<': // Just read in the whole thing.
+		slurp := func() ([]byte, error) {
+			return ioutil.ReadAll(bin)
+		}
 
-	var es []Elements
+		var es []Elements
 
-	switch bs[0] {
-	case '[': // JSON representing and array of Elements.
-		// log.Printf("Detected JSON array input")
-		bs = []byte(DestringNumbers(string(bs)))
-		err = json.Unmarshal(bs, &es)
+		bs, err := slurp()
+		if err != nil {
+			return err
+		}
+		switch peek[0] {
+		case '[':
+			log.Printf("Detected JSON array input")
 
-	case '{': // One elements in JSON per line.
-		// log.Printf("Detected one-per-line JSON input")
-		err = DoLines(bufio.NewReader(bytes.NewReader(bs)), func(s string) error {
-			var e Elements
-			if err := json.Unmarshal([]byte(s), &e); err != nil {
+			bs, err := slurp()
+			if err != nil {
 				return err
 			}
-			es = append(es, e)
-			return nil
-		})
-	case '<': // XML
-		// log.Printf("Detected XML input")
-		list := ElementsList{}
-		err = xml.Unmarshal(bs, &list)
-		es = list.Es // Hopefully
 
-	default:
-		in := bufio.NewReader(bytes.NewReader(bs))
-		if MaybeKVN(bs) {
-			// log.Printf("Detected KVN input")
-			err = DoKVNs(in, func(s string) error {
+			bs = []byte(DestringNumbers(string(bs)))
+			err = json.Unmarshal(bs, &es)
+
+		case '<':
+			log.Printf("Detected XML input")
+
+			list := ElementsList{}
+			err = xml.Unmarshal(bs, &list)
+			es = list.Es // Hopefully
+		}
+
+		for _, e := range es {
+			if err = f(e); err != nil {
+				// ToDo: Consider toleration.
+				return err
+			}
+		}
+
+	default: // Read line by line
+		if peek[0] == '{' {
+			err = DoLines(bin, func(s string) error {
+				var e Elements
+				if err := json.Unmarshal([]byte(s), &e); err != nil {
+					return err
+				}
+				return f(e)
+			})
+		} else if MaybeKVN(peek) {
+			err = DoKVNs(bin, func(s string) error {
 				e, _, err := ParseKVN(s)
 				if err != nil {
 					return err
 				}
-				es = append(es, *e)
-				return nil
+				return f(*e)
 			})
 
-		} else if MaybeCSV(bs) {
-			// log.Printf("Detected CSV input")
+		} else if MaybeCSV(peek) {
 			first := true
-			err = DoLines(in, func(s string) error {
+			err = DoLines(bin, func(s string) error {
 				if first && strings.Contains(s, ",EPOCH,") {
 					return nil
 				}
@@ -118,31 +135,18 @@ func Do(in io.Reader, f func(Elements) error) error {
 				if err != nil {
 					return err
 				}
-				es = append(es, *e)
-				return nil
+				return f(*e)
 			})
 		} else {
-			// log.Printf("Detected TLE input")
-			err = DoTLEs(in, 3, func(lines []string) error {
+			err = DoTLEs(bin, 3, func(lines []string) error {
 				e, err := ParseTLE(lines[0], lines[1], lines[2])
 				if err != nil {
 					return err
 				}
-				es = append(es, *e)
-				return nil
+				return f(*e)
 			})
 		}
 	}
 
-	if err != nil {
-		return err
-	}
-
-	for i, e := range es {
-		if err := f(e); err != nil {
-			return fmt.Errorf("%s on set %d", err, i)
-		}
-	}
-
-	return nil
+	return err
 }
