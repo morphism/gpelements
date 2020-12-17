@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"strings"
 )
 
@@ -74,12 +73,12 @@ func Do(in io.Reader, f func(Elements) error) error {
 
 	switch bs[0] {
 	case '[': // JSON representing and array of Elements.
-		log.Printf("Detected JSON array input")
+		// log.Printf("Detected JSON array input")
 		bs = []byte(DestringNumbers(string(bs)))
 		err = json.Unmarshal(bs, &es)
 
 	case '{': // One elements in JSON per line.
-		log.Printf("Detected one-per-line JSON input")
+		// log.Printf("Detected one-per-line JSON input")
 		err = DoLines(bufio.NewReader(bytes.NewReader(bs)), func(s string) error {
 			var e Elements
 			if err := json.Unmarshal([]byte(s), &e); err != nil {
@@ -89,7 +88,7 @@ func Do(in io.Reader, f func(Elements) error) error {
 			return nil
 		})
 	case '<': // XML
-		log.Printf("Detected XML input")
+		// log.Printf("Detected XML input")
 		list := ElementsList{}
 		err = xml.Unmarshal(bs, &list)
 		es = list.Es // Hopefully
@@ -97,7 +96,7 @@ func Do(in io.Reader, f func(Elements) error) error {
 	default:
 		in := bufio.NewReader(bytes.NewReader(bs))
 		if MaybeKVN(bs) {
-			log.Printf("Detected KVN input")
+			// log.Printf("Detected KVN input")
 			err = DoKVNs(in, func(s string) error {
 				e, _, err := ParseKVN(s)
 				if err != nil {
@@ -108,7 +107,7 @@ func Do(in io.Reader, f func(Elements) error) error {
 			})
 
 		} else if MaybeCSV(bs) {
-			log.Printf("Detected CSV input")
+			// log.Printf("Detected CSV input")
 			first := true
 			err = DoLines(in, func(s string) error {
 				if first && strings.Contains(s, ",EPOCH,") {
@@ -123,7 +122,7 @@ func Do(in io.Reader, f func(Elements) error) error {
 				return nil
 			})
 		} else {
-			log.Printf("Detected TLE input")
+			// log.Printf("Detected TLE input")
 			err = DoTLEs(in, 3, func(lines []string) error {
 				e, err := ParseTLE(lines[0], lines[1], lines[2])
 				if err != nil {
