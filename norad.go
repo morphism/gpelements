@@ -28,7 +28,11 @@ func (s *NoradCatId) UnmarshalJSON(bs []byte) error {
 }
 
 func (s NoradCatId) MarshalJSON() ([]byte, error) {
-	if _, err := strconv.Atoi(string(s)); err == nil {
+	if _, err := strconv.Atoi(string(s)); err == nil && s[0] != '0' {
+		// error calling MarshalJSON for type gpelements.NoradCatId:
+		// invalid character '0' after top-level value.
+		//
+		// That message is why we check for s[0] != '0'.
 		return []byte(s), nil
 	}
 	return []byte(fmt.Sprintf(`"%s"`, string(s))), nil
