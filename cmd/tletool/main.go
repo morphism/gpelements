@@ -242,7 +242,7 @@ Subcommands:
 			err = Prop(&e, t0, t1, *orbitInterval, false)
 			if err == nil {
 				bs, err = json.Marshal(e)
-				if bs == nil {
+				if err == nil {
 					s = string(bs)
 				}
 			}
@@ -303,21 +303,23 @@ Subcommands:
 		return err
 	})
 
-	var bs []byte
-	switch subcommand {
-	case "jsonarray":
-		bs, err = json.MarshalIndent(es, "", "  ")
-		if err == nil {
-			fmt.Printf("%s\n", bs)
-		}
+	if err == nil {
+		var bs []byte
+		switch subcommand {
+		case "jsonarray":
+			bs, err = json.MarshalIndent(es, "", "  ")
+			if err == nil {
+				fmt.Printf("%s\n", bs)
+			}
 
-	case "xml":
-		list := gpelements.ElementsList{
-			Es: es,
-		}
-		bs, err := xml.Marshal(list)
-		if err == nil {
-			fmt.Printf("%s\n", bs)
+		case "xml":
+			list := gpelements.ElementsList{
+				Es: es,
+			}
+			bs, err := xml.Marshal(list)
+			if err == nil {
+				fmt.Printf("%s\n", bs)
+			}
 		}
 	}
 
