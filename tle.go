@@ -16,7 +16,9 @@ func ParseTLE(line0, line1, line2 string) (*Elements, error) {
 		s   string
 	)
 
-	e.Name = strings.TrimRight(line0, " ")
+	if strings.HasPrefix(line0, "0 ") {
+		e.Name = strings.TrimRight(line0[2:], " ")
+	}
 
 	if s, err = tleExtract(line1, 3, 7); err != nil {
 		return nil, wrapErrf(err, "NoradCatId")
@@ -252,7 +254,7 @@ func year56(year int) int {
 }
 
 func (e *Elements) MarshalTLE() (line0, line1, line2 string, err error) {
-	line0 = fmt.Sprintf("% -24s", e.Name)
+	line0 = fmt.Sprintf("0 % -22s", e.Name)
 
 	// Slowly (very) and clearly (hopefully).
 	s := "1 "
@@ -313,8 +315,8 @@ func (e *Elements) MarshalTLE() (line0, line1, line2 string, err error) {
 
 	s = "2 " +
 		fmt.Sprintf("% -5s ", e.NoradCatId.Encode()) +
-		fmt.Sprintf("%8.4f ", e.Inclination) +
-		fmt.Sprintf("%8.4f ", e.RightAscension)
+		fmt.Sprintf("%08.4f ", e.Inclination) +
+		fmt.Sprintf("%08.4f ", e.RightAscension)
 
 	{
 		s0 := strconv.FormatFloat(e.Eccentricity, 'f', 8, 64)
@@ -326,8 +328,8 @@ func (e *Elements) MarshalTLE() (line0, line1, line2 string, err error) {
 		s += s0[2:9] + " "
 	}
 
-	s += fmt.Sprintf("%8.4f ", e.ArgOfPericenter)
-	s += fmt.Sprintf("%8.4f ", e.MeanAnomaly)
+	s += fmt.Sprintf("%08.4f ", e.ArgOfPericenter)
+	s += fmt.Sprintf("%08.4f ", e.MeanAnomaly)
 	s += fmt.Sprintf("%11.8f", e.MeanMotion)
 
 	if 99999 < e.RevAtEpoch {
