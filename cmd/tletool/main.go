@@ -57,9 +57,10 @@ func run() error {
 		resetEpoch = walk.Bool("reset-epoch", true, "Set Epoch to now")
 		seed       = walk.Int64("seed", time.Now().UTC().UnixNano(), "RNG seed (defaults to current time in ns)")
 
-		rename      = flag.NewFlagSet("rename", flag.ExitOnError)
-		renameState = rename.Int64("state", 0, "Next catalog number in Alpha-5 A range")
-		renameClear = rename.Bool("clear", false, "Remove original name (suffix)")
+		rename          = flag.NewFlagSet("rename", flag.ExitOnError)
+		renameState     = rename.Int64("state", 0, "Next catalog number in Alpha-5 A range")
+		renameClear     = rename.Bool("clear", false, "Remove original name (suffix)")
+		renameResetTime = rename.String("reset-time", "", "Set epoch to this time")
 
 		sample    = flag.NewFlagSet("sample", flag.ExitOnError)
 		sampleMod = sample.Int("mod", 10, "Sampling hash modulus")
@@ -189,6 +190,18 @@ Subcommands:
 
 	gpelements.HigherPrecisionSGP4 = *propHigher
 
+	var epoch *gpelements.Time
+	if *renameResetTime != "" {
+		t, err := time.Parse(*renameResetTime, time.RFC3339Nano)
+		if err != nil {
+			panic(fmt.Errorf("bad -reset-time: %v", err))
+		}
+		e := gpelements.Time(t)
+		epoch = &e
+	}
+
+	state := *renameState
+
 	var (
 		i  = 0
 		es = make([]gpelements.Elements, 0, 1024)
@@ -224,7 +237,7 @@ Subcommands:
 			case "tle":
 				var l0, l1, l2 string
 				if l0, l1, l2, err = e.MarshalTLE(); err == nil {
-					s = fmt.Sprintf("%s\n%s\n%s\n", l0, l1, l2)
+					s = fmt.Sprintf("%s\n%s\n%s", l0, l1, l2)
 				}
 			case "xml":
 				es = append(es, e)
@@ -277,7 +290,6 @@ Subcommands:
 			}
 
 		case "rename":
-			state := *renameState
 			var id string
 			id, state, err = gpelements.NextAlpha5Num(state)
 			if err != nil {
@@ -290,12 +302,14 @@ Subcommands:
 			}
 			e.NoradCatId = gpelements.NoradCatId(id)
 			e.ElementSet = 0
-			e.Epoch = gpelements.NewTime(time.Now().UTC())
+			if epoch != nil {
+				e.Epoch = epoch
+			}
 
 			// Probably should emit in a high-precision format.
 			var l0, l1, l2 string
 			if l0, l1, l2, err = e.MarshalTLE(); err == nil {
-				s = fmt.Sprintf("%s\n%s\n%s\n", l0, l1, l2)
+				s = fmt.Sprintf("%s\n%s\n%s", l0, l1, l2)
 			}
 		case "walk":
 			if err = e.Walk(*minSteps, *maxSteps); err == nil {
@@ -309,7 +323,7 @@ Subcommands:
 						var l0, l1, l2 string
 						l0, l1, l2, err = e.MarshalTLE()
 						if err == nil {
-							s = fmt.Sprintf("%s\n%s\n%s\n", l0, l1, l2)
+							s = fmt.Sprintf("%s\n%s\n%s", l0, l1, l2)
 						}
 					}
 				}
