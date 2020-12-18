@@ -30,6 +30,22 @@ func TestTLEMany(t *testing.T) {
 		}
 
 		for i, line := range lines {
+			if i == 0 {
+				var (
+					x = strings.TrimSpace(line)
+					y = strings.TrimSpace(check[i])
+				)
+				if strings.HasPrefix(x, "0 ") {
+					x = x[2:]
+				}
+				if strings.HasPrefix(y, "0 ") {
+					y = y[2:]
+				}
+				if x != y {
+					return fmt.Errorf("different\n'%s'\n'%s'\n\n", line, check[i])
+				}
+				continue
+			}
 			if !sameTLELine(line, check[i]) {
 				return fmt.Errorf("different\n'%s'\n'%s'\n\n", line, check[i])
 			}
