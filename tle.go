@@ -30,16 +30,18 @@ func ParseTLE(line0, line1, line2 string) (*Elements, error) {
 
 	{
 		if s, err = tleExtract(line1, 10, 11); err != nil {
-			return nil, wrapErrf(err, "LaunchYear")
+			return nil, wrapErrf(err, "LaunchYear: '%s'", line1)
 		}
 		var year int
 		if year, err = strconv.Atoi(s); err != nil {
-			return nil, wrapErrf(err, "LaunchYear")
-		}
-		if year < 56 {
-			year = 2000 + year
+			// return nil, wrapErrf(err, "LaunchYear: '%s'", line1)
+			// For now (!), silently igore.
 		} else {
-			year = 1900 + year
+			if year < 56 {
+				year = 2000 + year
+			} else {
+				year = 1900 + year
+			}
 		}
 		e.LaunchYear = year
 	}
@@ -50,7 +52,8 @@ func ParseTLE(line0, line1, line2 string) (*Elements, error) {
 	s = strings.TrimLeft(s, "0")
 	if 0 < len(s) {
 		if e.LaunchNum, err = strconv.Atoi(s); err != nil {
-			return nil, wrapErrf(err, "LaunchNum: %s", line1)
+			// return nil, wrapErrf(err, "LaunchNum: %s", line1)
+			// For now (!), silently igore.
 		}
 	}
 
