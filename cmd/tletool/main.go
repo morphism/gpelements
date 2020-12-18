@@ -37,12 +37,13 @@ func run() error {
 		transform = flag.NewFlagSet("transform", flag.ExitOnError)
 		emit      = transform.String("emit", "csv", "Output represention: csv|csvh|json|jsonarray|tle|kvn|xml")
 
-		prop         = flag.NewFlagSet("prop", flag.ExitOnError)
-		propFrom     = prop.String("from", ts(now), "Propagation start time")
-		propTo       = prop.String("to", ts(now.Add(time.Hour)), "Propagation end time")
-		propInterval = prop.Duration("interval", 10*time.Minute, "Propagation end time")
-		propHigher   = prop.Bool("higher-precision", true, "Higher-precision (as able)")
-		propDuration = prop.Duration("duration", 0, "Duration of propagation (instead of -to)")
+		prop                = flag.NewFlagSet("prop", flag.ExitOnError)
+		propFrom            = prop.String("from", ts(now), "Propagation start time")
+		propTo              = prop.String("to", "", "Propagation end time")
+		propInterval        = prop.Duration("interval", time.Minute, "Propagation end time")
+		propHigher          = prop.Bool("higher-precision", true, "Higher-precision (as able)")
+		propDuration        = prop.Duration("duration", 0, "Duration of propagation (instead of -to)")
+		propDurationDefault = 10 * time.Minute
 
 		orbit         = flag.NewFlagSet("on-orbit", flag.ExitOnError)
 		orbitFrom     = orbit.String("from", ts(now), "Propagation start time")
@@ -169,15 +170,24 @@ Subcommands:
 	if err != nil {
 		return err
 	}
-	t1, err := time.Parse(time.RFC3339Nano, *propTo)
-	if err != nil {
-		return err
-	}
-	gpelements.HigherPrecisionSGP4 = *propHigher
 
-	if 0 < *propDuration {
+	var t1 time.Time
+	if *propTo != "" {
+		if 0 < *propDuration {
+			fmt.Fprintf(os.Stderr, "Don't give both -to and -duration")
+			os.Exit(1)
+		}
+		if t1, err = time.Parse(time.RFC3339Nano, *propTo); err != nil {
+			return err
+		}
+	} else {
+		if 0 == *propDuration {
+			*propDuration = propDurationDefault
+		}
 		t1 = t0.Add(*propDuration)
 	}
+
+	gpelements.HigherPrecisionSGP4 = *propHigher
 
 	var (
 		i  = 0
