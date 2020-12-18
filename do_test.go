@@ -17,7 +17,7 @@ func TestDo(t *testing.T) {
 		defer in.Close()
 		r := bufio.NewReader(in)
 
-		return Do(r, func(e Elements) error {
+		return Do(r, 128, func(e Elements) error {
 			// fmt.Printf("%v\n", e)
 			return nil
 		})

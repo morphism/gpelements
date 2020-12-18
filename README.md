@@ -30,10 +30,14 @@ Subcommands:
 
   transform:
 
-  -emit string
-    	Output represention: csv|csvh|json|jsonarray|tle|kvn|xml (default "csv")
+  -buf-size int
+    	Buffer size (default 4096)
+  -help
+    	Just get help
   -tolerate
     	Log errors instead of stopping
+  -emit string
+    	Output represention: csv|csvh|json|jsonarray|tle|kvn|xml (default "csv")
 
 
   csvh emits CSV output with a header line.
@@ -45,23 +49,25 @@ Subcommands:
 
   prop: Propagate
 
+  -duration duration
+    	Duration of propagation (instead of -to)
   -from string
-    	Propagation start time (default "2020-12-17T03:25:26.958925604Z")
+    	Propagation start time (default "2020-12-18T16:42:22.644764256Z")
   -higher-precision
     	Higher-precision (as able) (default true)
   -interval duration
     	Propagation end time (default 10m0s)
   -to string
-    	Propagation end time (default "2020-12-17T04:25:26.958925604Z")
+    	Propagation end time (default "2020-12-18T17:42:22.644764256Z")
 
   on-orbit: Filter for on-orbit
 
   -from string
-    	Propagation start time (default "2020-12-17T03:25:26.958925604Z")
+    	Propagation start time (default "2020-12-18T16:42:22.644764256Z")
   -interval duration
     	Propagation end time (default 10m0s)
   -to string
-    	Propagation end time (default "2020-12-17T04:25:26.958925604Z")
+    	Propagation end time (default "2020-12-18T17:42:22.644764256Z")
 
   walk: Random walk
 
@@ -74,7 +80,7 @@ Subcommands:
   -reset-epoch
     	Set Epoch to now (default true)
   -seed int
-    	RNG seed (defaults to current time in ns) (default 1608175526958942431)
+    	RNG seed (defaults to current time in ns) (default 1608309742644776587)
 
   rename: Update name, catalog number
 

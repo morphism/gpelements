@@ -32,6 +32,7 @@ func run() error {
 		generic  = flag.NewFlagSet("generic", flag.ContinueOnError)
 		bufSize  = generic.Int("buf-size", 4096, "Buffer size")
 		tolerate = generic.Bool("tolerate", false, "Log errors instead of stopping")
+		help     = generic.Bool("help", false, "Just get help")
 
 		transform = flag.NewFlagSet("transform", flag.ExitOnError)
 		emit      = transform.String("emit", "csv", "Output represention: csv|csvh|json|jsonarray|tle|kvn|xml")
@@ -41,6 +42,7 @@ func run() error {
 		propTo       = prop.String("to", ts(now.Add(time.Hour)), "Propagation end time")
 		propInterval = prop.Duration("interval", 10*time.Minute, "Propagation end time")
 		propHigher   = prop.Bool("higher-precision", true, "Higher-precision (as able)")
+		propDuration = prop.Duration("duration", 0, "Duration of propagation (instead of -to)")
 
 		orbit         = flag.NewFlagSet("on-orbit", flag.ExitOnError)
 		orbitFrom     = orbit.String("from", ts(now), "Propagation start time")
@@ -117,9 +119,22 @@ Subcommands:
 
 	generic.Parse(os.Args[1:])
 
+	if *help {
+		usage()
+		os.Exit(0)
+	}
+
 	var (
-		remaining  = generic.NArg()
-		next       = len(os.Args) - remaining
+		remaining = generic.NArg()
+		next      = len(os.Args) - remaining
+	)
+
+	if len(os.Args) <= next {
+		usage()
+		os.Exit(1)
+	}
+
+	var (
 		subcommand = os.Args[next]
 		args       = os.Args[next+1:]
 	)
@@ -159,6 +174,10 @@ Subcommands:
 		return err
 	}
 	gpelements.HigherPrecisionSGP4 = *propHigher
+
+	if 0 < *propDuration {
+		t1 = t0.Add(*propDuration)
+	}
 
 	var (
 		i  = 0
