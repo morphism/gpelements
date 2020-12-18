@@ -50,17 +50,17 @@ func run() error {
 		orbitTo       = orbit.String("to", ts(now.Add(time.Hour)), "Propagation end time")
 		orbitInterval = orbit.Duration("interval", 10*time.Minute, "Propagation end time")
 
-		walk       = flag.NewFlagSet("walk", flag.ExitOnError)
-		minSteps   = walk.Int("min-steps", 1, "Minimum number of steps")
-		maxSteps   = walk.Int("max-steps", 3, "Maximum number of steps")
-		incSet     = walk.Bool("inc-set", true, "Increment element set number")
-		resetEpoch = walk.Bool("reset-epoch", true, "Set Epoch to now")
-		seed       = walk.Int64("seed", time.Now().UTC().UnixNano(), "RNG seed (defaults to current time in ns)")
+		walk           = flag.NewFlagSet("walk", flag.ExitOnError)
+		minSteps       = walk.Int("min-steps", 1, "Minimum number of steps")
+		maxSteps       = walk.Int("max-steps", 3, "Maximum number of steps")
+		incSet         = walk.Bool("inc-set", true, "Increment element set number")
+		walkResetEpoch = walk.String("reset-epoch", "", "Set Epoch to this time ('now' shorthand)")
+		seed           = walk.Int64("seed", time.Now().UTC().UnixNano(), "RNG seed (defaults to current time in ns)")
 
-		rename          = flag.NewFlagSet("rename", flag.ExitOnError)
-		renameState     = rename.Int64("state", 0, "Next catalog number in Alpha-5 A range")
-		renameClear     = rename.Bool("clear", false, "Remove original name (suffix)")
-		renameResetTime = rename.String("reset-time", "", "Set epoch to this time")
+		rename           = flag.NewFlagSet("rename", flag.ExitOnError)
+		renameState      = rename.Int64("state", 0, "Next catalog number in Alpha-5 A range")
+		renameClear      = rename.Bool("clear", false, "Remove original name (suffix)")
+		renameResetEpoch = rename.String("reset-epoch", "", "Set epoch to this time ('now' shorthand)")
 
 		sample    = flag.NewFlagSet("sample", flag.ExitOnError)
 		sampleMod = sample.Int("mod", 10, "Sampling hash modulus")
@@ -191,14 +191,21 @@ Subcommands:
 	gpelements.HigherPrecisionSGP4 = *propHigher
 
 	var epoch *gpelements.Time
-	if *renameResetTime != "" {
-		t, err := time.Parse(*renameResetTime, time.RFC3339Nano)
-		if err != nil {
-			panic(fmt.Errorf("bad -reset-time: %v", err))
+	parseEpoch := func(s string) {
+		if s != "" {
+			if s == "now" {
+				s = time.Now().UTC().Format(time.RFC3339Nano)
+			}
+			t, err := time.Parse(s, time.RFC3339Nano)
+			if err != nil {
+				panic(fmt.Errorf("bad epoch: %v", err))
+			}
+			e := gpelements.Time(t)
+			epoch = &e
 		}
-		e := gpelements.Time(t)
-		epoch = &e
 	}
+	parseEpoch(*renameResetEpoch)
+	parseEpoch(*walkResetEpoch)
 
 	state := *renameState
 
@@ -315,8 +322,8 @@ Subcommands:
 			if err = e.Walk(*minSteps, *maxSteps); err == nil {
 				if *incSet {
 					if err = e.IncSetNum(); err == nil {
-						if *resetEpoch {
-							e.Epoch = gpelements.NewTime(time.Now().UTC())
+						if epoch != nil {
+							e.Epoch = epoch
 						}
 
 						// Probably should emit in a high-precision format.
